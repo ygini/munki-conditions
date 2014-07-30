@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# This munki condition script fill the ConditionalItems plist with list of existing printers queue name.
+# Usefull if you want to install a package with Munki only if mcx_0 is here (to apply custom options for example).
+
+printers_key="available_printers"
+
+# Read the location of the ManagedInstallDir from ManagedInstall.plist
+managedinstalldir="$(defaults read /Library/Preferences/ManagedInstalls ManagedInstallDir)"
+
+if [ "$managedinstalldir" = "" ]; then
+	echo "No Managed Installs directory could be read, exiting.."
+	exit 1
+fi
+
+# Make sure we're outputting our information to "ConditionalItems.plist" (plist is left off since defaults requires this)
+plist_loc="$managedinstalldir/ConditionalItems"
+
+local_printers=$(lpstat -p | grep "printer\|imprimante" | awk '{print $2}')
+
+for printer in $local_printers
+do
+	defaults write "$plist_loc" "$printers_key" -array-add "$printer"
+done
+
+exit 0
